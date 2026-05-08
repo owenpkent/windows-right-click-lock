@@ -15,6 +15,11 @@ Built to make camera control comfortable in games where you have to keep right-c
 - Single-instance enforced via a named mutex.
 - Per-monitor V2 DPI aware.
 
+## Documentation
+
+- **[Usage guide](docs/usage.md)** — installation, daily use, settings reference, debug window, troubleshooting.
+- **[Technical white paper](docs/whitepaper.md)** — design rationale, state machine, crash-safety model, performance, compatibility.
+
 ## Install
 
 Grab the latest [release](../../releases) or build from source.

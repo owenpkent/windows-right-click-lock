@@ -1,0 +1,39 @@
+## .NET / Visual Studio
+bin/
+obj/
+out/
+*.user
+*.suo
+*.userprefs
+.vs/
+.vscode/
+.idea/
+
+## Build output
+[Dd]ebug/
+[Rr]elease/
+[Pp]ublish/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+
+## Logs and caches
+*.log
+*.tlog
+*.cache
+*.pdb
+*.binlog
+
+## OS junk
+Thumbs.db
+desktop.ini
+.DS_Store
+
+## NuGet
+*.nupkg
+.nuget/
+packages/
+
+## Tooling
+TestResults/

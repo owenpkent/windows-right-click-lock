@@ -124,6 +124,9 @@ internal sealed class RightClickLockController : IDisposable
             _clickLockArmed = false;
             e.Suppress = true;
             _locked = true;
+            // The OS still thinks RMB is held because we suppressed the UP. Mirror that
+            // in the held-flag so Program's emergency-release fires RBUTTON_UP if we crash.
+            InputInjector.MarkHeld(true);
             Log("Physical RMB UP after threshold -> LOCKED (UP suppressed).");
             LockStateChanged?.Invoke(this, EventArgs.Empty);
         }

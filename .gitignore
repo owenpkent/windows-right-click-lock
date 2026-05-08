@@ -33,6 +33,9 @@ desktop.ini
 ## Windows shortcuts (machine-specific absolute paths — regenerate via scripts/create-shortcut.ps1)
 *.lnk
 
+## Crash dumps
+*.stackdump
+
 ## NuGet
 *.nupkg
 .nuget/

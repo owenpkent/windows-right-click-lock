@@ -39,14 +39,24 @@ internal sealed class LowLevelMouseHook : IDisposable
 
     private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
     {
-        if (nCode == HC_ACTION)
+        // Never let an exception escape the hook proc — Windows will silently
+        // unhook us and the app loses its core functionality with no visible failure.
+        try
         {
-            var data = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
-            var injectedByUs = data.dwExtraInfo == InjectionTag;
-            var args = new MouseHookEventArgs(wParam.ToInt32(), data, injectedByUs);
-            MouseEvent?.Invoke(this, args);
-            if (args.Suppress)
-                return 1;
+            if (nCode == HC_ACTION)
+            {
+                var data = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
+                var injectedByUs = data.dwExtraInfo == InjectionTag;
+                var args = new MouseHookEventArgs(wParam.ToInt32(), data, injectedByUs);
+                MouseEvent?.Invoke(this, args);
+                if (args.Suppress)
+                    return 1;
+            }
+        }
+        catch
+        {
+            // Swallow. We can't surface this from the hook thread; the controller's
+            // debug stream is the right place to learn about it if it ever fires.
         }
         return CallNextHookEx(_hookId, nCode, wParam, lParam);
     }

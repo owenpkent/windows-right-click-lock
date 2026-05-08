@@ -35,20 +35,34 @@ public sealed class AppSettings
             if (File.Exists(SettingsPath))
             {
                 var json = File.ReadAllText(SettingsPath);
-                return JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
+                var loaded = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
+                loaded.ClampInPlace();
+                return loaded;
             }
         }
         catch
         {
-            // Corrupt file — fall through to defaults.
+            // Corrupt file — fall through to defaults. (Possible recovery: restore from .bak.)
         }
         return new AppSettings();
     }
 
     public void Save()
     {
+        ClampInPlace();
         Directory.CreateDirectory(SettingsDir);
         var json = JsonSerializer.Serialize(this, JsonOptions);
-        File.WriteAllText(SettingsPath, json);
+
+        // Atomic write: serialize to a temp file, then move-with-overwrite so a crash
+        // mid-write can never leave us with a half-written settings.json.
+        var tempPath = SettingsPath + ".tmp";
+        File.WriteAllText(tempPath, json);
+        File.Move(tempPath, SettingsPath, overwrite: true);
+    }
+
+    private void ClampInPlace()
+    {
+        if (ClickLockHoldMs < 100) ClickLockHoldMs = 100;
+        else if (ClickLockHoldMs > 3000) ClickLockHoldMs = 3000;
     }
 }

@@ -8,6 +8,7 @@ internal sealed class MainForm : Form
     private readonly RightClickLockController _controller;
     private readonly Action _onSaved;
     private readonly Action _onExitRequested;
+    private readonly Action _onShowDebug;
 
     private readonly CheckBox _enabledCheckbox = new() { Text = "Enabled", AutoSize = true };
     private readonly NumericUpDown _holdMs = new() { Minimum = 100, Maximum = 3000, Increment = 50, Value = 500, Width = 80 };
@@ -16,16 +17,18 @@ internal sealed class MainForm : Form
     private readonly Label _statusLabel = new() { AutoSize = true, ForeColor = SystemColors.GrayText };
     private readonly Button _saveButton = new() { Text = "Save", AutoSize = true };
     private readonly Button _closeButton = new() { Text = "Close", AutoSize = true };
+    private readonly Button _debugButton = new() { Text = "Debug window...", AutoSize = true };
 
     /// <summary>True only when the close has already been resolved via TaskDialog (Minimize/Exit).</summary>
     private bool _closeResolved;
 
-    public MainForm(AppSettings settings, RightClickLockController controller, Action onSaved, Action onExitRequested)
+    public MainForm(AppSettings settings, RightClickLockController controller, Action onSaved, Action onExitRequested, Action onShowDebug)
     {
         _settings = settings;
         _controller = controller;
         _onSaved = onSaved;
         _onExitRequested = onExitRequested;
+        _onShowDebug = onShowDebug;
 
         Text = "Windows Mouse Mods";
         FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -84,6 +87,9 @@ internal sealed class MainForm : Form
         var buttonRow = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
         buttonRow.Controls.Add(_closeButton);
         buttonRow.Controls.Add(_saveButton);
+        // Push the debug button to the far left of the row.
+        _debugButton.Margin = new Padding(0, 3, 24, 3);
+        buttonRow.Controls.Add(_debugButton);
         root.Controls.Add(buttonRow);
 
         Controls.Add(root);
@@ -93,6 +99,7 @@ internal sealed class MainForm : Form
     {
         _saveButton.Click += (_, _) => Save();
         _closeButton.Click += (_, _) => Close();
+        _debugButton.Click += (_, _) => _onShowDebug();
         FormClosing += OnFormClosing;
     }
 

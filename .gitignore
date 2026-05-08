@@ -30,6 +30,9 @@ Thumbs.db
 desktop.ini
 .DS_Store
 
+## Windows shortcuts (machine-specific absolute paths — regenerate via scripts/create-shortcut.ps1)
+*.lnk
+
 ## NuGet
 *.nupkg
 .nuget/

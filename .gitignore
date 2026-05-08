@@ -46,3 +46,6 @@ packages/
 
 ## Tooling
 TestResults/
+
+## Claude Code local state (per-machine session/cache directory)
+.claude/

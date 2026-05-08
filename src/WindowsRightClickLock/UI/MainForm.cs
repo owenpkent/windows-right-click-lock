@@ -1,6 +1,6 @@
-using WindowsMouseMods.Core;
+using WindowsRightClickLock.Core;
 
-namespace WindowsMouseMods.UI;
+namespace WindowsRightClickLock.UI;
 
 internal sealed class MainForm : Form
 {
@@ -32,7 +32,7 @@ internal sealed class MainForm : Form
         _onExitRequested = onExitRequested;
         _onShowDebug = onShowDebug;
 
-        Text = "Windows Mouse Mods";
+        Text = "Windows Right-Click Lock";
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = true;
@@ -156,7 +156,7 @@ internal sealed class MainForm : Form
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Couldn't update Run key: {ex.Message}", "Windows Mouse Mods",
+            MessageBox.Show($"Couldn't update Run key: {ex.Message}", "Windows Right-Click Lock",
                 MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
@@ -205,7 +205,7 @@ internal sealed class MainForm : Form
 
         var page = new TaskDialogPage
         {
-            Caption = "Windows Mouse Mods",
+            Caption = "Windows Right-Click Lock",
             Heading = "Minimize to tray, or exit?",
             Text = "Minimize keeps the app running in the system tray. Exit quits completely.",
             Icon = TaskDialogIcon.Information,

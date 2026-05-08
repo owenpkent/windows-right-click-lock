@@ -1,6 +1,6 @@
-using static WindowsMouseMods.Native.NativeMethods;
+using static WindowsRightClickLock.Native.NativeMethods;
 
-namespace WindowsMouseMods.Native;
+namespace WindowsRightClickLock.Native;
 
 internal static class InputInjector
 {

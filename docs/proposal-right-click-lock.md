@@ -2,7 +2,7 @@
 
 **Version:** 0.1
 **Author:** Owen Kent (redacted@example.invalid)
-**Reference implementation:** [github.com/owenpkent/windows-mouse-mods](https://github.com/owenpkent/windows-mouse-mods)
+**Reference implementation:** [github.com/owenpkent/windows-right-click-lock](https://github.com/owenpkent/windows-right-click-lock)
 **Audience:** Windows Input, Devices, Settings, and Accessibility teams at Microsoft
 
 ---
@@ -156,7 +156,7 @@ If the feature ships, the proposed signals to track post-launch:
 
 A complete working implementation of Right-Click Lock for Windows 10/11 is available at:
 
-- **Source:** [github.com/owenpkent/windows-mouse-mods](https://github.com/owenpkent/windows-mouse-mods)
+- **Source:** [github.com/owenpkent/windows-right-click-lock](https://github.com/owenpkent/windows-right-click-lock)
 - **Stack:** .NET 9, WinForms, BCL-only (no NuGet dependencies).
 - **Size:** ~600 lines of C#.
 - **Architecture:** Layered (Native → Hooks → Core → UI). Whitepaper at [docs/whitepaper.md](whitepaper.md).
@@ -217,4 +217,4 @@ The implementation is approximately 80 lines of C# in `RightClickLockController.
 - **Author:** Owen Kent
 - **Email:** redacted@example.invalid
 - **GitHub:** [github.com/owenpkent](https://github.com/owenpkent)
-- **Project:** [github.com/owenpkent/windows-mouse-mods](https://github.com/owenpkent/windows-mouse-mods)
+- **Project:** [github.com/owenpkent/windows-right-click-lock](https://github.com/owenpkent/windows-right-click-lock)

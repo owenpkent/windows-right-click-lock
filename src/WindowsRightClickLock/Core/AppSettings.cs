@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace WindowsMouseMods.Core;
+namespace WindowsRightClickLock.Core;
 
 public sealed class AppSettings
 {
@@ -24,7 +24,7 @@ public sealed class AppSettings
 
     private static readonly string SettingsDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "WindowsMouseMods");
+        "WindowsRightClickLock");
 
     private static readonly string SettingsPath = Path.Combine(SettingsDir, "settings.json");
 

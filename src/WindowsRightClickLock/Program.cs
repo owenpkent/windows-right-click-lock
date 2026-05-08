@@ -1,16 +1,16 @@
 using System.Security.AccessControl;
 using System.Security.Principal;
-using WindowsMouseMods.Native;
-using WindowsMouseMods.UI;
+using WindowsRightClickLock.Native;
+using WindowsRightClickLock.UI;
 
-namespace WindowsMouseMods;
+namespace WindowsRightClickLock;
 
 internal static class Program
 {
     // Local\ scopes the kernel objects to the current logon session, preventing cross-session
     // squatting and unauthenticated cross-session signaling. See docs/security-review.md (H1).
-    private const string MutexName = "Local\\WindowsMouseMods.SingleInstance";
-    private const string ShowEventName = "Local\\WindowsMouseMods.Show";
+    private const string MutexName = "Local\\WindowsRightClickLock.SingleInstance";
+    private const string ShowEventName = "Local\\WindowsRightClickLock.Show";
 
     private static Mutex? _singleInstanceMutex;
     private static EventWaitHandle? _showEvent;
@@ -75,7 +75,7 @@ internal static class Program
         {
             // Release first in case the exception came from the controller while locked.
             InputInjector.EmergencyRelease();
-            MessageBox.Show(e.Exception.ToString(), "Windows Mouse Mods - error",
+            MessageBox.Show(e.Exception.ToString(), "Windows Right-Click Lock - error",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         };
 
@@ -130,7 +130,7 @@ internal static class Program
         })
         {
             IsBackground = true,
-            Name = "WindowsMouseMods.ShowListener",
+            Name = "WindowsRightClickLock.ShowListener",
         };
         _showListenerThread.Start();
     }

@@ -1,7 +1,7 @@
-using WindowsMouseMods.Core;
-using WindowsMouseMods.Native;
+using WindowsRightClickLock.Core;
+using WindowsRightClickLock.Native;
 
-namespace WindowsMouseMods.UI;
+namespace WindowsRightClickLock.UI;
 
 internal sealed class TrayApplicationContext : ApplicationContext
 {
@@ -41,7 +41,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         {
             Icon = _iconIdle,
             Visible = true,
-            Text = "Windows Mouse Mods",
+            Text = "Windows Right-Click Lock",
             ContextMenuStrip = menu,
         };
         _trayIcon.DoubleClick += (_, _) => ShowMainForm();
@@ -52,7 +52,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Failed to install hooks:\n{ex.Message}", "Windows Mouse Mods",
+            MessageBox.Show($"Failed to install hooks:\n{ex.Message}", "Windows Right-Click Lock",
                 MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
@@ -78,7 +78,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         var status = !_settings.Enabled ? "disabled"
             : _controller.Locked ? "locked"
             : "ready";
-        _trayIcon.Text = $"Windows Mouse Mods - {status}";
+        _trayIcon.Text = $"Windows Right-Click Lock - {status}";
         _trayIcon.Icon = _controller.Locked ? _iconLocked : _iconIdle;
     }
 

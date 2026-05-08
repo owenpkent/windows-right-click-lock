@@ -1,7 +1,7 @@
 using System.Drawing.Drawing2D;
-using WindowsMouseMods.Native;
+using WindowsRightClickLock.Native;
 
-namespace WindowsMouseMods.UI;
+namespace WindowsRightClickLock.UI;
 
 /// <summary>
 /// Renders tray icons at runtime via GDI+. Both icons show a stylised mouse silhouette;

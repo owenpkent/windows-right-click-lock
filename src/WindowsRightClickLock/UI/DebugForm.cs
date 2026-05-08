@@ -1,6 +1,6 @@
-using WindowsMouseMods.Core;
+using WindowsRightClickLock.Core;
 
-namespace WindowsMouseMods.UI;
+namespace WindowsRightClickLock.UI;
 
 internal sealed class DebugForm : Form
 {
@@ -29,7 +29,7 @@ internal sealed class DebugForm : Form
     {
         _controller = controller;
 
-        Text = "Windows Mouse Mods - Debug";
+        Text = "Windows Right-Click Lock - Debug";
         StartPosition = FormStartPosition.CenterParent;
         ClientSize = new Size(640, 400);
         MinimumSize = new Size(420, 240);

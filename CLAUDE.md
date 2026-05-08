@@ -14,15 +14,15 @@ Windows tray utility (.NET 9 WinForms) that "locks" the right mouse button held,
 
 ## Architecture (bottom-up)
 
-- **`src/WindowsMouseMods/Native/`**: P/Invoke surface.
+- **`src/WindowsRightClickLock/Native/`**: P/Invoke surface.
   - `NativeMethods.cs` declares everything (SetWindowsHookEx, SendInput, structs, constants).
   - `InputInjector.cs` wraps `SendInput` for synthetic RMB down/up.
-- **`src/WindowsMouseMods/Hooks/`**: `LowLevelMouseHook` wraps `WH_MOUSE_LL`. Events expose a mutable `Suppress` flag; handlers set it to `true` to drop the message before downstream apps see it.
-- **`src/WindowsMouseMods/Core/`**: pure logic.
+- **`src/WindowsRightClickLock/Hooks/`**: `LowLevelMouseHook` wraps `WH_MOUSE_LL`. Events expose a mutable `Suppress` flag; handlers set it to `true` to drop the message before downstream apps see it.
+- **`src/WindowsRightClickLock/Core/`**: pure logic.
   - `RightClickLockController` is the ClickLock state machine. Also exposes `DebugMessage` events so the debug window can render a live stream.
-  - `AppSettings` is JSON at `%APPDATA%\WindowsMouseMods\settings.json`.
+  - `AppSettings` is JSON at `%APPDATA%\WindowsRightClickLock\settings.json`.
   - `AutoStart` toggles the `HKCU\...\Run` key.
-- **`src/WindowsMouseMods/UI/`**
+- **`src/WindowsRightClickLock/UI/`**
   - `TrayApplicationContext`: runs as the `ApplicationContext`; owns the `NotifyIcon`, the controller, the settings form, and the debug form.
   - `MainForm`: settings window. Title-bar close raises a `TaskDialog` asking Minimize / Exit / Cancel.
   - `DebugForm`: live event stream wired to `controller.DebugMessage`. Bounded at 1000 lines, with Pause / Clear / Auto-scroll.
@@ -43,14 +43,14 @@ Windows tray utility (.NET 9 WinForms) that "locks" the right mouse button held,
 ## Build / run
 
 ```powershell
-dotnet build src/WindowsMouseMods/WindowsMouseMods.csproj -c Release
-# Output: src/WindowsMouseMods/bin/Release/net9.0-windows/WindowsMouseMods.exe
+dotnet build src/WindowsRightClickLock/WindowsRightClickLock.csproj -c Release
+# Output: src/WindowsRightClickLock/bin/Release/net9.0-windows/WindowsRightClickLock.exe
 ```
 
 Single-file publish:
 
 ```powershell
-dotnet publish src/WindowsMouseMods/WindowsMouseMods.csproj `
+dotnet publish src/WindowsRightClickLock/WindowsRightClickLock.csproj `
   -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true
 ```
 
@@ -62,5 +62,5 @@ dotnet publish src/WindowsMouseMods/WindowsMouseMods.csproj `
 
 ## Dev shortcuts
 
-- `WindowsMouseMods.lnk` at the repo root launches the most recent Release build. Regenerate after a clean checkout with `pwsh scripts/create-shortcut.ps1`.
+- `WindowsRightClickLock.lnk` at the repo root launches the most recent Release build. Regenerate after a clean checkout with `pwsh scripts/create-shortcut.ps1`.
 - `.lnk` files contain absolute paths and are gitignored.

@@ -1,8 +1,8 @@
 using System.Runtime.InteropServices;
-using WindowsMouseMods.Native;
-using static WindowsMouseMods.Native.NativeMethods;
+using WindowsRightClickLock.Native;
+using static WindowsRightClickLock.Native.NativeMethods;
 
-namespace WindowsMouseMods.Hooks;
+namespace WindowsRightClickLock.Hooks;
 
 /// <summary>
 /// Wraps WH_MOUSE_LL. Raise the event for every event; subscribers can mark e.Suppress = true
@@ -14,7 +14,7 @@ internal sealed class LowLevelMouseHook : IDisposable
     private static int _errorCount;
     private static readonly string ErrorLogPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "WindowsMouseMods", "hook-errors.log");
+        "WindowsRightClickLock", "hook-errors.log");
 
     private readonly HookProc _proc;
     private IntPtr _hookId = IntPtr.Zero;
@@ -65,7 +65,7 @@ internal sealed class LowLevelMouseHook : IDisposable
             // and the user has no way to recover other than restarting the app. We also can't
             // surface the exception inline (no UI thread guarantee, can't block the hook),
             // so capture up to the first MaxLoggedErrors instances asynchronously to a file
-            // under %LocalAppData%\WindowsMouseMods\hook-errors.log. See docs/security-review.md (M1).
+            // under %LocalAppData%\WindowsRightClickLock\hook-errors.log. See docs/security-review.md (M1).
             LogHookErrorAsync(ex);
         }
         return CallNextHookEx(_hookId, nCode, wParam, lParam);

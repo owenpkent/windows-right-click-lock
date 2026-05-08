@@ -1,11 +1,11 @@
-# Windows Mouse Mods: Technical White Paper
+# Windows Right-Click Lock: Technical White Paper
 
 **Version:** 0.1
 **Audience:** Developers and technically-curious users who want to understand how the tool works under the hood.
 
 ## Abstract
 
-Windows ships an accessibility feature called *ClickLock*, which lets the user hold a left-mouse-button click without keeping the button physically depressed. ClickLock has no equivalent for the right mouse button, despite many games (MMOs, ARPGs, RTS, builder/sandbox titles) requiring sustained right-click for camera control. **Windows Mouse Mods** fills that gap with a small tray-resident utility that implements RMB ClickLock plus the operational safety controls a long-running input-injection tool needs: crash-safe release, single-instance focus, atomic settings, and session-aware lock dismissal.
+Windows ships an accessibility feature called *ClickLock*, which lets the user hold a left-mouse-button click without keeping the button physically depressed. ClickLock has no equivalent for the right mouse button, despite many games (MMOs, ARPGs, RTS, builder/sandbox titles) requiring sustained right-click for camera control. **Windows Right-Click Lock** fills that gap with a small tray-resident utility that implements RMB ClickLock plus the operational safety controls a long-running input-injection tool needs: crash-safe release, single-instance focus, atomic settings, and session-aware lock dismissal.
 
 This document describes the design, the state machine, the safety invariants, and the trade-offs.
 
@@ -145,8 +145,8 @@ The hook procedure's `try/catch` wrapper closes a sixth gap: an exception that p
 
 Two concerns: detection and communication.
 
-- **Detection** is a named `Mutex` (`Global\WindowsMouseMods.SingleInstance`). The first instance owns it; subsequent launches see `createdNew == false`.
-- **Communication** is a named `EventWaitHandle` (`Global\WindowsMouseMods.Show`). The owning instance creates it and runs a background thread that waits on it. A second launch opens it via `TryOpenExisting`, calls `Set`, and exits with code 0. The background thread wakes, posts a callback to a captured `WindowsFormsSynchronizationContext`, and the UI thread shows the settings window.
+- **Detection** is a named `Mutex` (`Global\WindowsRightClickLock.SingleInstance`). The first instance owns it; subsequent launches see `createdNew == false`.
+- **Communication** is a named `EventWaitHandle` (`Global\WindowsRightClickLock.Show`). The owning instance creates it and runs a background thread that waits on it. A second launch opens it via `TryOpenExisting`, calls `Set`, and exits with code 0. The background thread wakes, posts a callback to a captured `WindowsFormsSynchronizationContext`, and the UI thread shows the settings window.
 
 This pattern avoids:
 

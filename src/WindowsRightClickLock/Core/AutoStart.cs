@@ -1,11 +1,11 @@
 using Microsoft.Win32;
 
-namespace WindowsMouseMods.Core;
+namespace WindowsRightClickLock.Core;
 
 internal static class AutoStart
 {
     private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    private const string ValueName = "WindowsMouseMods";
+    private const string ValueName = "WindowsRightClickLock";
 
     public static bool IsEnabled()
     {

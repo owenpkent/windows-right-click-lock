@@ -1,10 +1,10 @@
-# Windows Mouse Mods: Usage Guide
+# Windows Right-Click Lock: Usage Guide
 
 A practical, end-user walkthrough. For the design rationale and implementation details, see [whitepaper.md](whitepaper.md).
 
 ## Quick start
 
-1. Run `WindowsMouseMods.exe`. The settings window opens; defaults are sensible.
+1. Run `WindowsRightClickLock.exe`. The settings window opens; defaults are sensible.
 2. In a game (or any window): **press and hold the right mouse button for half a second, then release**. The tray icon turns red and the right button stays "held"; move your mouse to look around.
 3. **Click the right mouse button again** to release the lock and return to normal.
 
@@ -23,23 +23,23 @@ winget install Microsoft.DotNet.SDK.9
 Clone the repo and build:
 
 ```powershell
-git clone https://github.com/owenpkent/windows-mouse-mods.git
-cd windows-mouse-mods
-dotnet build src\WindowsMouseMods\WindowsMouseMods.csproj -c Release
+git clone https://github.com/owenpkent/windows-right-click-lock.git
+cd windows-right-click-lock
+dotnet build src\WindowsRightClickLock\WindowsRightClickLock.csproj -c Release
 ```
 
-The output is at `src\WindowsMouseMods\bin\Release\net9.0-windows\WindowsMouseMods.exe`.
+The output is at `src\WindowsRightClickLock\bin\Release\net9.0-windows\WindowsRightClickLock.exe`.
 
 ### Option B. Single-file publish
 
 Produces a self-contained `.exe` you can copy anywhere:
 
 ```powershell
-dotnet publish src\WindowsMouseMods\WindowsMouseMods.csproj `
+dotnet publish src\WindowsRightClickLock\WindowsRightClickLock.csproj `
   -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true
 ```
 
-Output lands in `src\WindowsMouseMods\bin\Release\net9.0-windows\win-x64\publish\`.
+Output lands in `src\WindowsRightClickLock\bin\Release\net9.0-windows\win-x64\publish\`.
 
 ### Option C. Root-level shortcut (dev)
 
@@ -99,7 +99,7 @@ Three ways:
 | Start with Windows | off | Adds/removes a `HKCU\...\Run` registry entry. No admin needed |
 | Start minimized to tray | off | If on, settings window does not auto-open on launch |
 
-Settings are saved to `%APPDATA%\WindowsMouseMods\settings.json`. The file is human-readable JSON; you can edit it externally if you want to script configuration. Out-of-range values are clamped on load.
+Settings are saved to `%APPDATA%\WindowsRightClickLock\settings.json`. The file is human-readable JSON; you can edit it externally if you want to script configuration. Out-of-range values are clamped on load.
 
 ## Tray menu reference
 
@@ -174,20 +174,20 @@ That's the single-instance focus signal: a second launch hands the focus signal 
 
 ### I want to undo "Start with Windows"
 
-Open settings → uncheck **Start with Windows** → Save. The registry entry is removed. (You can also delete `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\WindowsMouseMods` manually.)
+Open settings → uncheck **Start with Windows** → Save. The registry entry is removed. (You can also delete `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\WindowsRightClickLock` manually.)
 
 ## Uninstall
 
 The app is portable; there is no installer to remove. To clean up:
 
 1. From the tray menu, choose **Exit**.
-2. Delete the `WindowsMouseMods.exe` (and any DLLs alongside it from a non-published build).
-3. (Optional) Delete `%APPDATA%\WindowsMouseMods\` to remove the saved settings.
-4. (Optional) Open Registry Editor and delete `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\WindowsMouseMods` if you had enabled "Start with Windows".
+2. Delete the `WindowsRightClickLock.exe` (and any DLLs alongside it from a non-published build).
+3. (Optional) Delete `%APPDATA%\WindowsRightClickLock\` to remove the saved settings.
+4. (Optional) Open Registry Editor and delete `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\WindowsRightClickLock` if you had enabled "Start with Windows".
 
 ## Reporting issues
 
-Open an issue at <https://github.com/owenpkent/windows-mouse-mods/issues> with:
+Open an issue at <https://github.com/owenpkent/windows-right-click-lock/issues> with:
 
 - Windows version (Settings → System → About → "OS build").
 - A short description of what you expected and what happened.

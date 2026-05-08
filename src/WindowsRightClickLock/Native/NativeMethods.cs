@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace WindowsMouseMods.Native;
+namespace WindowsRightClickLock.Native;
 
 internal static class NativeMethods
 {

@@ -1,7 +1,7 @@
 # Security review
 
 **Date:** 2026-05-08
-**Scope:** All shipping source under `src/WindowsMouseMods/`.
+**Scope:** All shipping source under `src/WindowsRightClickLock/`.
 **Threat model:** malicious code running as the same user, malicious processes in other sessions on a shared machine (RDP, fast user switching), local low-privilege users on a multi-user box. Admin-level attackers are out of scope.
 
 This document records adversarial findings against the codebase as of commit `de65b1b` and the fixes applied. The numbering is preserved across the document so issue IDs (H1, M3, etc.) can be cited in commit messages and PRs.
@@ -29,7 +29,7 @@ No findings rose to critical (no remote code execution, no elevation of privileg
 
 ### H1. `Global\` namespace on the single-instance mutex and the show-window event
 
-**File:** `src/WindowsMouseMods/Program.cs:8-9`
+**File:** `src/WindowsRightClickLock/Program.cs:8-9`
 
 The single-instance mutex and the show-window event were declared in the kernel-global namespace via the `Global\` prefix. Two attacks were enabled:
 
@@ -40,7 +40,7 @@ The single-instance mutex and the show-window event were declared in the kernel-
 
 ### H2. Named event has no DACL
 
-**File:** `src/WindowsMouseMods/Program.cs:64`
+**File:** `src/WindowsRightClickLock/Program.cs:64`
 
 The `EventWaitHandle` was constructed with the default DACL, which on Windows grants synchronize access broadly. Combined with H1, this meant any process on the system could signal the event. After H1 alone, the namespace is per-session, but a per-session attacker (same user, same session) could still signal the event because no ACL restricted it.
 
@@ -50,15 +50,15 @@ The `EventWaitHandle` was constructed with the default DACL, which on Windows gr
 
 ### M1. Hook proc swallows exceptions silently
 
-**File:** `src/WindowsMouseMods/Hooks/LowLevelMouseHook.cs:56-60`
+**File:** `src/WindowsRightClickLock/Hooks/LowLevelMouseHook.cs:56-60`
 
 The `try/catch` around the hook proc body swallowed every exception with no out-of-band signal. The comment claimed "the controller's debug stream is the right place to learn about it," but the swallowed exception originated inside the event handler and never reached the controller's logging path. A bug that throws on every event would have been an undiagnosable silent malfunction.
 
-**Fix:** added a static rate-limited error logger. Up to 5 hook-proc exceptions per process lifetime are appended to `%LocalAppData%\WindowsMouseMods\hook-errors.log` via a fire-and-forget `Task` so the hook thread itself never blocks on file I/O. After 5 errors the log is suppressed to avoid runaway disk writes.
+**Fix:** added a static rate-limited error logger. Up to 5 hook-proc exceptions per process lifetime are appended to `%LocalAppData%\WindowsRightClickLock\hook-errors.log` via a fire-and-forget `Task` so the hook thread itself never blocks on file I/O. After 5 errors the log is suppressed to avoid runaway disk writes.
 
 ### M2. `SendInput` return value ignored
 
-**File:** `src/WindowsMouseMods/Native/InputInjector.cs:53` and `19-23`
+**File:** `src/WindowsRightClickLock/Native/InputInjector.cs:53` and `19-23`
 
 `SendInput` returned the count of events successfully inserted; the code discarded it via `_ = SendInput(...)`. `RightDown` then unconditionally called `MarkHeld(true)` even if `SendInput` returned 0. The `_heldFlag` could go out of sync with the OS state, causing `EmergencyRelease` to send a `RIGHTUP` for a button that was never pressed, or fail to release one that was.
 
@@ -66,7 +66,7 @@ The `try/catch` around the hook proc body swallowed every exception with no out-
 
 ### M3. AutoStart path quoting breaks if `Environment.ProcessPath` contains `"`
 
-**File:** `src/WindowsMouseMods/Core/AutoStart.cs:22-23`
+**File:** `src/WindowsRightClickLock/Core/AutoStart.cs:22-23`
 
 The Run-key value was constructed as `$"\"{exe}\""`. NTFS allows `"` in path components. If the executable lived at a path containing a quote, the resulting Run-key value would be malformed and the shell parser would resolve a different binary on next logon.
 
@@ -74,23 +74,23 @@ The Run-key value was constructed as `$"\"{exe}\""`. NTFS allows `"` in path com
 
 ### M4. `--preview-icons [outDir]` accepts unrestricted output path
 
-**File:** `src/WindowsMouseMods/Program.cs:23-26` and `src/WindowsMouseMods/UI/PreviewIcons.cs`
+**File:** `src/WindowsRightClickLock/Program.cs:23-26` and `src/WindowsRightClickLock/UI/PreviewIcons.cs`
 
-The output directory was passed straight through to `Directory.CreateDirectory` and `Bitmap.Save`. Any process on the box that could spawn `WindowsMouseMods.exe --preview-icons C:\some\path` could cause the binary to drop four PNG files at `C:\some\path` as the user. The files were our content, not attacker-controlled, so impact was limited to file creation and possible overwrite of legitimately named files at the chosen path. Still, the surface was unintentional.
+The output directory was passed straight through to `Directory.CreateDirectory` and `Bitmap.Save`. Any process on the box that could spawn `WindowsRightClickLock.exe --preview-icons C:\some\path` could cause the binary to drop four PNG files at `C:\some\path` as the user. The files were our content, not attacker-controlled, so impact was limited to file creation and possible overwrite of legitimately named files at the chosen path. Still, the surface was unintentional.
 
 **Fix:** the `--preview-icons` argument is now validated to be a relative path with no directory traversal (`..`). Absolute paths and traversal segments are rejected with a clear error before any file is created. The dev workflow documented in `CLAUDE.md` (running with no argument, or with a simple subfolder name like `preview`) continues to work.
 
 ### M5. Settings file integrity (accepted)
 
-**File:** `src/WindowsMouseMods/Core/AppSettings.cs:43-44`
+**File:** `src/WindowsRightClickLock/Core/AppSettings.cs:43-44`
 
-A user with write access to `%AppData%\WindowsMouseMods\settings.json` can modify the contents. The schema is `bool`/`int` only, and `JsonSerializer.Deserialize<AppSettings>` is invoked with no polymorphism, so deserialization-gadget abuse is not feasible. The autostart toggle is checked against the registry, not the JSON, so the JSON cannot cause a binary to autostart that wouldn't already.
+A user with write access to `%AppData%\WindowsRightClickLock\settings.json` can modify the contents. The schema is `bool`/`int` only, and `JsonSerializer.Deserialize<AppSettings>` is invoked with no polymorphism, so deserialization-gadget abuse is not feasible. The autostart toggle is checked against the registry, not the JSON, so the JSON cannot cause a binary to autostart that wouldn't already.
 
 **Decision:** accepted. A future maintainer should re-evaluate this finding if `string` or `object` fields are added to `AppSettings`. The simplest robust hardening would be to keep the schema strictly primitive and add a unit test that fails the build if a non-primitive property is added.
 
 ### M6. TOCTOU on tap-to-release if `SendInput` fails
 
-**File:** `src/WindowsMouseMods/Core/RightClickLockController.cs:114-122`
+**File:** `src/WindowsRightClickLock/Core/RightClickLockController.cs:114-122`
 
 When the user tapped RMB to release the lock, the controller did three things in order: suppress the physical DOWN, set `_swallowNextRealRmbUp = true`, and call `ReleaseLockIfHeld` which calls `InputInjector.RightUp` (a `SendInput` call). If `SendInput` failed, the OS still believed RMB was held, the controller had already cleared `_locked`, and the next physical UP was about to be swallowed by the flag we just set. Result: stuck synthetic RMB-down with no recovery short of process exit.
 

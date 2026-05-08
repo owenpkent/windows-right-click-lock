@@ -7,13 +7,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
-    <AssemblyName>WindowsMouseMods</AssemblyName>
-    <RootNamespace>WindowsMouseMods</RootNamespace>
+    <AssemblyName>WindowsRightClickLock</AssemblyName>
+    <RootNamespace>WindowsRightClickLock</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <Version>0.1.0</Version>
     <Authors>Owen Kent</Authors>
-    <Product>Windows Mouse Mods</Product>
+    <Product>Windows Right-Click Lock</Product>
     <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
 

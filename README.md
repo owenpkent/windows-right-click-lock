@@ -54,33 +54,33 @@ winget install Microsoft.DotNet.SDK.9
 Then:
 
 ```powershell
-dotnet build src/WindowsMouseMods/WindowsMouseMods.csproj -c Release
+dotnet build src/WindowsRightClickLock/WindowsRightClickLock.csproj -c Release
 ```
 
 For a single-file publish:
 
 ```powershell
-dotnet publish src/WindowsMouseMods/WindowsMouseMods.csproj `
+dotnet publish src/WindowsRightClickLock/WindowsRightClickLock.csproj `
   -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true
 ```
 
-The published `.exe` lands in `src/WindowsMouseMods/bin/Release/net9.0-windows/win-x64/publish/`.
+The published `.exe` lands in `src/WindowsRightClickLock/bin/Release/net9.0-windows/win-x64/publish/`.
 
 ### Run
 
-Launch `WindowsMouseMods.exe`. The settings window opens with sensible defaults. The tray icon turns red when the lock engages. Right-click the tray for the full menu. The full walkthrough is in [docs/usage.md](docs/usage.md).
+Launch `WindowsRightClickLock.exe`. The settings window opens with sensible defaults. The tray icon turns red when the lock engages. Right-click the tray for the full menu. The full walkthrough is in [docs/usage.md](docs/usage.md).
 
 ## Architecture
 
 ```
-windows-mouse-mods/
+windows-right-click-lock/
 ├── docs/
 │   ├── proposal-right-click-lock.md   # Microsoft proposal
 │   ├── whitepaper.md                  # design rationale
 │   ├── usage.md                       # end-user guide
 │   ├── security-review.md             # adversarial audit and fixes
 │   └── mouse-properties-mockup.png    # UX mockup
-├── src/WindowsMouseMods/
+├── src/WindowsRightClickLock/
 │   ├── Native/        # P/Invoke, SendInput, structs
 │   ├── Hooks/         # WH_MOUSE_LL wrapper with Suppress flag
 │   ├── Core/          # state machine, settings, autostart
@@ -101,7 +101,7 @@ The implementation aims to meet a bar consistent with shipping native in Windows
 - Per-session named kernel objects (`Local\` namespace) with explicit DACLs scoped to the current user SID. Cross-session squatting and unauthenticated cross-session signaling are not possible.
 - Crash-safe and session-safe synthetic state release via five redundant paths: `UnhandledException`, `ProcessExit`, `ApplicationExit`, `ThreadException`, and `SessionSwitch`.
 - `SendInput` return value is checked. Held-state invariants are maintained even when the OS rejects an injection (e.g. UIPI block).
-- Hook procedure exception isolation with rate-limited diagnostic logging to `%LocalAppData%\WindowsMouseMods\hook-errors.log`.
+- Hook procedure exception isolation with rate-limited diagnostic logging to `%LocalAppData%\WindowsRightClickLock\hook-errors.log`.
 - Atomic settings file writes via temp-then-rename.
 - No telemetry. No network. No elevation requested.
 
@@ -131,4 +131,4 @@ The author offers a perpetual, royalty-free license to use any portion of this r
 
 - **Author:** Owen Kent
 - **Email:** redacted@example.invalid
-- **Project:** [github.com/owenpkent/windows-mouse-mods](https://github.com/owenpkent/windows-mouse-mods)
+- **Project:** [github.com/owenpkent/windows-right-click-lock](https://github.com/owenpkent/windows-right-click-lock)

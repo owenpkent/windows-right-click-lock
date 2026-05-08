@@ -1,8 +1,8 @@
-using WindowsMouseMods.Hooks;
-using WindowsMouseMods.Native;
-using static WindowsMouseMods.Native.NativeMethods;
+using WindowsRightClickLock.Hooks;
+using WindowsRightClickLock.Native;
+using static WindowsRightClickLock.Native.NativeMethods;
 
-namespace WindowsMouseMods.Core;
+namespace WindowsRightClickLock.Core;
 
 /// <summary>
 /// ClickLock for the right mouse button.

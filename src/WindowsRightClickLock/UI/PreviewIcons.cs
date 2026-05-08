@@ -1,7 +1,7 @@
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 
-namespace WindowsMouseMods.UI;
+namespace WindowsRightClickLock.UI;
 
 /// <summary>
 /// Dev-only helper. Run the binary with `--preview-icons [outDir]` to dump 32x32 native

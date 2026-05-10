@@ -7,11 +7,24 @@ internal sealed class MainForm : Form
     private readonly AppSettings _settings;
     private readonly RightClickLockController _controller;
     private readonly Action _onSaved;
-    private readonly Action _onExitRequested;
     private readonly Action _onShowDebug;
 
+    private static readonly int[] HoldMsSteps = { 100, 200, 300, 400, 500, 700, 900, 1200, 1500, 2000 };
+
     private readonly CheckBox _enabledCheckbox = new() { Text = "Enabled", AutoSize = true };
-    private readonly NumericUpDown _holdMs = new() { Minimum = 100, Maximum = 3000, Increment = 50, Value = 500, Width = 80 };
+    private readonly TrackBar _holdSlider = new()
+    {
+        Minimum = 0,
+        Maximum = HoldMsSteps.Length - 1,
+        TickFrequency = 1,
+        TickStyle = TickStyle.BottomRight,
+        SmallChange = 1,
+        LargeChange = 1,
+        Width = 220,
+        AutoSize = false,
+        Height = 36,
+    };
+    private readonly Label _holdValueLabel = new() { AutoSize = true, Margin = new Padding(0, 6, 0, 4) };
     private readonly CheckBox _moveCancelCheckbox = new() { Text = "Cancel arming if mouse moves during hold", AutoSize = true };
     private readonly NumericUpDown _moveCancelPx = new() { Minimum = 1, Maximum = 50, Increment = 1, Value = 5, Width = 60 };
     private readonly CheckBox _autoStartCheckbox = new() { Text = "Start with Windows", AutoSize = true };
@@ -21,15 +34,11 @@ internal sealed class MainForm : Form
     private readonly Button _closeButton = new() { Text = "Close", AutoSize = true };
     private readonly Button _debugButton = new() { Text = "Debug window...", AutoSize = true };
 
-    /// <summary>True only when the close has already been resolved via TaskDialog (Minimize/Exit).</summary>
-    private bool _closeResolved;
-
-    public MainForm(AppSettings settings, RightClickLockController controller, Action onSaved, Action onExitRequested, Action onShowDebug)
+    public MainForm(AppSettings settings, RightClickLockController controller, Action onSaved, Action onShowDebug)
     {
         _settings = settings;
         _controller = controller;
         _onSaved = onSaved;
-        _onExitRequested = onExitRequested;
         _onShowDebug = onShowDebug;
 
         Text = "Windows Right-Click Lock";
@@ -76,10 +85,16 @@ internal sealed class MainForm : Form
         var clickGroup = new GroupBox { Text = "ClickLock", AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(8), Margin = new Padding(0, 0, 0, 8) };
         var clickContent = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink };
 
-        var holdRow = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
-        holdRow.Controls.Add(new Label { Text = "Hold to lock (ms):", AutoSize = true, Margin = new Padding(0, 6, 6, 0) });
-        holdRow.Controls.Add(_holdMs);
-        clickContent.Controls.Add(holdRow);
+        var holdHeaderRow = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
+        holdHeaderRow.Controls.Add(new Label { Text = "Hold to lock:", AutoSize = true, Margin = new Padding(0, 6, 6, 0) });
+        holdHeaderRow.Controls.Add(_holdValueLabel);
+        clickContent.Controls.Add(holdHeaderRow);
+
+        var holdSliderRow = new FlowLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
+        holdSliderRow.Controls.Add(new Label { Text = "Short", AutoSize = true, Margin = new Padding(0, 10, 4, 0) });
+        holdSliderRow.Controls.Add(_holdSlider);
+        holdSliderRow.Controls.Add(new Label { Text = "Long", AutoSize = true, Margin = new Padding(4, 10, 0, 0) });
+        clickContent.Controls.Add(holdSliderRow);
 
         clickContent.Controls.Add(_moveCancelCheckbox);
 
@@ -117,18 +132,41 @@ internal sealed class MainForm : Form
         _closeButton.Click += (_, _) => Close();
         _debugButton.Click += (_, _) => _onShowDebug();
         _moveCancelCheckbox.CheckedChanged += (_, _) => _moveCancelPx.Enabled = _moveCancelCheckbox.Checked;
+        _holdSlider.ValueChanged += (_, _) => UpdateHoldValueLabel();
         FormClosing += OnFormClosing;
     }
 
     private void LoadFromSettings()
     {
         _enabledCheckbox.Checked = _settings.Enabled;
-        _holdMs.Value = Math.Clamp(_settings.ClickLockHoldMs, (int)_holdMs.Minimum, (int)_holdMs.Maximum);
+        _holdSlider.Value = NearestHoldStepIndex(_settings.ClickLockHoldMs);
+        UpdateHoldValueLabel();
         _moveCancelCheckbox.Checked = _settings.MoveCancelEnabled;
         _moveCancelPx.Value = Math.Clamp(_settings.MoveCancelPixels, (int)_moveCancelPx.Minimum, (int)_moveCancelPx.Maximum);
         _moveCancelPx.Enabled = _moveCancelCheckbox.Checked;
         _autoStartCheckbox.Checked = AutoStart.IsEnabled();
         _startMinimizedCheckbox.Checked = _settings.StartMinimized;
+    }
+
+    private void UpdateHoldValueLabel()
+    {
+        _holdValueLabel.Text = $"{HoldMsSteps[_holdSlider.Value]} ms";
+    }
+
+    private static int NearestHoldStepIndex(int ms)
+    {
+        int bestIndex = 0;
+        int bestDelta = int.MaxValue;
+        for (int i = 0; i < HoldMsSteps.Length; i++)
+        {
+            int delta = Math.Abs(HoldMsSteps[i] - ms);
+            if (delta < bestDelta)
+            {
+                bestDelta = delta;
+                bestIndex = i;
+            }
+        }
+        return bestIndex;
     }
 
     private void UpdateStatus()
@@ -144,7 +182,7 @@ internal sealed class MainForm : Form
     private void Save()
     {
         _settings.Enabled = _enabledCheckbox.Checked;
-        _settings.ClickLockHoldMs = (int)_holdMs.Value;
+        _settings.ClickLockHoldMs = HoldMsSteps[_holdSlider.Value];
         _settings.MoveCancelEnabled = _moveCancelCheckbox.Checked;
         _settings.MoveCancelPixels = (int)_moveCancelPx.Value;
         _settings.StartMinimized = _startMinimizedCheckbox.Checked;
@@ -167,56 +205,11 @@ internal sealed class MainForm : Form
 
     private void OnFormClosing(object? sender, FormClosingEventArgs e)
     {
-        // Programmatic close from inside the TaskDialog handler; let it through.
-        if (_closeResolved) return;
-
-        // Windows is shutting down; let it through too.
+        // System shutdown / programmatic dispose: let it through.
         if (e.CloseReason != CloseReason.UserClosing) return;
 
-        var choice = AskMinimizeOrExit();
-        if (choice == CloseChoice.Cancel)
-        {
-            e.Cancel = true;
-            return;
-        }
-
-        _closeResolved = true;
-        if (choice == CloseChoice.Exit)
-        {
-            // Hide first so the form doesn't flash before the app tears down.
-            e.Cancel = true;
-            Hide();
-            _onExitRequested();
-        }
-        else
-        {
-            e.Cancel = true;
-            Hide();
-        }
-    }
-
-    private enum CloseChoice { Minimize, Exit, Cancel }
-
-    private CloseChoice AskMinimizeOrExit()
-    {
-        var minimizeButton = new TaskDialogButton("Minimize to Tray") { AllowCloseDialog = true };
-        var exitButton = new TaskDialogButton("Exit") { AllowCloseDialog = true };
-        var cancelButton = TaskDialogButton.Cancel;
-
-        var page = new TaskDialogPage
-        {
-            Caption = "Windows Right-Click Lock",
-            Heading = "Minimize to tray, or exit?",
-            Text = "Minimize keeps the app running in the system tray. Exit quits completely.",
-            Icon = TaskDialogIcon.Information,
-            DefaultButton = minimizeButton,
-            Buttons = { minimizeButton, exitButton, cancelButton },
-            AllowCancel = true,
-        };
-
-        var result = TaskDialog.ShowDialog(this, page);
-        if (result == minimizeButton) return CloseChoice.Minimize;
-        if (result == exitButton) return CloseChoice.Exit;
-        return CloseChoice.Cancel;
+        // User clicked X or Close: just hide. Exit lives on the tray menu.
+        e.Cancel = true;
+        Hide();
     }
 }

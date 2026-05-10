@@ -58,9 +58,6 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
         UpdateTrayIcon();
 
-        if (_settings.ShowDebugOnStartup)
-            ShowDebugWindow();
-
         if (!_settings.StartMinimized)
             ShowMainForm();
     }
@@ -97,7 +94,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
     {
         if (_mainForm == null || _mainForm.IsDisposed)
         {
-            _mainForm = new MainForm(_settings, _controller, OnSettingsSaved, ExitApplication, ShowDebugWindow);
+            _mainForm = new MainForm(_settings, _controller, OnSettingsSaved, ShowDebugWindow);
             _mainForm.FormClosed += (_, _) => _mainForm = null;
         }
         _mainForm.Show();
@@ -115,11 +112,6 @@ internal sealed class TrayApplicationContext : ApplicationContext
             {
                 _debugForm = null;
                 _debugItem.Checked = false;
-                if (_settings.ShowDebugOnStartup)
-                {
-                    _settings.ShowDebugOnStartup = false;
-                    _settings.Save();
-                }
             };
         }
         _debugForm.Show();
@@ -127,12 +119,6 @@ internal sealed class TrayApplicationContext : ApplicationContext
         _debugForm.BringToFront();
         _debugForm.Activate();
         _debugItem.Checked = true;
-
-        if (!_settings.ShowDebugOnStartup)
-        {
-            _settings.ShowDebugOnStartup = true;
-            _settings.Save();
-        }
     }
 
     private void ToggleDebugWindow()

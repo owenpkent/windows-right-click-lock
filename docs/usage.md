@@ -21,7 +21,7 @@ First launch extracts the bundled runtime to `%TEMP%\.net\` (one-time, takes a f
 If SmartScreen shows "Windows protected your PC" before publisher reputation has warmed up for that specific binary, click *More info* then *Run anyway*. The release notes include a SHA-256 if you want to verify before running:
 
 ```powershell
-Get-FileHash .\WindowsRightClickLock-0.1.0.exe -Algorithm SHA256
+Get-FileHash .\WindowsRightClickLock-0.1.1.exe -Algorithm SHA256
 ```
 
 ### Option B. Build from source
@@ -102,12 +102,14 @@ Three ways:
 
 ## Settings reference
 
+![Settings window](settings-window.png)
+
 | Setting | Default | What it controls |
 | --- | --- | --- |
 | Enabled | on | Master on/off without quitting the app |
-| Hold to lock (ms) | 500 | How long to hold RMB before arming triggers |
+| Hold to lock | 500 ms | How long to hold RMB before arming triggers. 10-stop slider from Short (100 ms) to Long (2000 ms); current value shown beside the slider |
 | Cancel arming if mouse moves during hold | on | If on, motion past the threshold during the hold cancels arming |
-| Movement threshold (px) | 5 | Distance that triggers move-cancel. Range 1–50 |
+| Movement threshold (px) | 5 | Distance that triggers move-cancel. Range 1-50 |
 | Start with Windows | off | Adds/removes a `HKCU\...\Run` registry entry. No admin needed |
 | Start minimized to tray | off | If on, settings window does not auto-open on launch |
 
@@ -120,11 +122,13 @@ Right-click the tray icon:
 - **Enabled.** Toggle without opening settings.
 - **Settings...** Open the settings window.
 - **Show debug window.** Open the live event stream (also available from the settings window).
-- **Exit.** Quit the app immediately, no prompt. Settings window's title-bar close shows a Minimize/Exit/Cancel dialog instead, since users often hit X without meaning to quit a tray app.
+- **Exit.** Quit the app immediately. The settings window's title-bar X (and the Close button) just minimizes to tray, since users often hit X without meaning to quit a tray app. Use this menu item to actually exit.
 
 Double-click the tray icon to open settings.
 
 ## Debug window
+
+![Debug window](debug-window.png)
 
 A separate, minimal terminal-style window that streams the controller's view of every relevant mouse event with millisecond timestamps. Open it from:
 
@@ -147,7 +151,7 @@ Controls:
 - **Clear.** Wipe the buffer.
 - **Auto-scroll.** Toggle; defaults on. Turn off if you want to read older lines without the view jumping.
 
-The window remembers itself across launches: if it was open when the app exits, it auto-opens on the next launch.
+The window does not auto-open on launch; you have to open it explicitly each session from the tray menu or the settings window.
 
 ### Tuning with the debug window
 

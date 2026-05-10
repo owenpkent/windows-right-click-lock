@@ -33,6 +33,14 @@ Press and briefly hold the right mouse button. After a configurable threshold (d
 
 The full end-user walkthrough is in [docs/usage.md](docs/usage.md).
 
+### Screenshots
+
+| Settings window | Debug window |
+| --- | --- |
+| ![Settings window](docs/settings-window.png) | ![Debug window](docs/debug-window.png) |
+
+The settings window exposes the hold-duration slider (Short to Long), the move-cancel safety overlay with its pixel threshold, autostart, and start-minimized. The debug window streams every relevant mouse event with millisecond timestamps and is useful for validating timing or comparing against a native implementation.
+
 ## Reference implementation
 
 ### Stack
@@ -50,7 +58,7 @@ Signed Windows builds are published on [Releases](https://github.com/owenpkent/w
 Each release includes the SHA-256 of the asset in the release notes. To verify before running:
 
 ```powershell
-Get-FileHash .\WindowsRightClickLock-0.1.0.exe -Algorithm SHA256
+Get-FileHash .\WindowsRightClickLock-0.1.1.exe -Algorithm SHA256
 ```
 
 ### Build

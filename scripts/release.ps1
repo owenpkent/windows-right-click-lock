@@ -28,6 +28,11 @@
     Skip the "working tree must be clean" guard. Useful for local smoke
     builds; never use when producing a tagged release.
 
+.PARAMETER NotesFile
+    Path to a markdown file whose contents are used as the GitHub Release
+    notes body. If omitted, a minimal default body (SHA + SmartScreen
+    note) is generated. Only used when -Tag is also supplied.
+
 .EXAMPLE
     pwsh scripts/release.ps1
     # Builds + signs to release/WindowsRightClickLock-0.1.0.exe
@@ -42,7 +47,8 @@ param(
     [string]$CertThumbprint = 'fc22b5221318f3f3f6b3eb2d969d7f99091557bf',
     [string]$TimestampServer = 'http://timestamp.digicert.com',
     [bool]$SelfContained = $true,
-    [switch]$SkipCleanCheck
+    [switch]$SkipCleanCheck,
+    [string]$NotesFile
 )
 
 $ErrorActionPreference = 'Stop'
@@ -173,7 +179,16 @@ if ($Tag) {
     git tag -a $tagName -m "Release $tagName"
     git push origin $tagName
 
-    $notes = @"
+    if ($NotesFile) {
+        if (-not (Test-Path $NotesFile)) { throw "Notes file not found: $NotesFile" }
+        $resolvedNotes = (Resolve-Path $NotesFile).Path
+        Write-Host "[Release] Using notes from: $resolvedNotes"
+        Write-Host "[Release] Creating GitHub Release..."
+        gh release create $tagName $artifact --title "$tagName" --notes-file $resolvedNotes
+        if ($LASTEXITCODE -ne 0) { throw "gh release create failed." }
+    }
+    else {
+        $notes = @"
 Windows Right-Click Lock $tagName
 
 **SHA-256:** ``$hash``
@@ -184,14 +199,15 @@ during the warm-up window, click *More info* then *Run anyway*.
 
 Run the .exe. Tray icon turns red while a right-click is held by the lock.
 "@
-    Write-Host "[Release] Creating GitHub Release..."
-    $notesFile = New-TemporaryFile
-    try {
-        Set-Content -Path $notesFile -Value $notes -Encoding utf8
-        gh release create $tagName $artifact --title "$tagName" --notes-file $notesFile
-        if ($LASTEXITCODE -ne 0) { throw "gh release create failed." }
-    } finally {
-        Remove-Item $notesFile -ErrorAction SilentlyContinue
+        Write-Host "[Release] Creating GitHub Release..."
+        $tmpNotes = New-TemporaryFile
+        try {
+            Set-Content -Path $tmpNotes -Value $notes -Encoding utf8
+            gh release create $tagName $artifact --title "$tagName" --notes-file $tmpNotes
+            if ($LASTEXITCODE -ne 0) { throw "gh release create failed." }
+        } finally {
+            Remove-Item $tmpNotes -ErrorAction SilentlyContinue
+        }
     }
 }
 

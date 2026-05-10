@@ -19,9 +19,6 @@ public sealed class AppSettings
     public bool StartMinimized { get; set; } = false;
     public bool AutoStartWithWindows { get; set; } = false;
 
-    /// <summary>Re-open the debug window automatically on launch if it was open last time.</summary>
-    public bool ShowDebugOnStartup { get; set; } = false;
-
     private static readonly string SettingsDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "WindowsRightClickLock");

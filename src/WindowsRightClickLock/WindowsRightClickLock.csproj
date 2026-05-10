@@ -11,7 +11,7 @@
     <RootNamespace>WindowsRightClickLock</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Authors>Owen Kent</Authors>
     <Product>Windows Right-Click Lock</Product>
     <PlatformTarget>AnyCPU</PlatformTarget>

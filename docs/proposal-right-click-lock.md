@@ -11,7 +11,7 @@
 
 Windows has shipped **ClickLock**, a tap-and-hold-to-lock primary mouse button feature, since Windows 2000. There is no equivalent for the secondary (right) button. The asymmetry has a real user cost: sustained right-click is the de-facto camera gesture across modern PC games (MMOs, ARPGs, RTS, builder/sandbox titles, flight sims), and accessibility users with limited grip strength need symmetric button-locking for the same reasons that motivated ClickLock in the first place.
 
-This proposal asks Microsoft to add **Right-Click Lock** as a native option in Mouse Properties (classic Control Panel) and Settings → Bluetooth & devices → Mouse, mirroring the existing ClickLock UX. A complete user-mode reference implementation already exists (~600 LOC, .NET 9, BCL-only) that demonstrates feasibility, validates the UX, and surfaces the operational concerns (move-cancel, crash-safe release, hook ordering) Microsoft would need to address. The proposal includes a UX mockup, suggested implementation paths inside the OS input stack, risk analysis, and two fallback paths the project will pursue if the feature does not land natively: a custom Control Panel applet (Appendix A, preferred) and a submission to PowerToys (Appendix B, alternate).
+This proposal asks Microsoft to ship **Right-Click Lock** through one of two paths: (1) natively in Mouse Properties (classic Control Panel) and Settings → Bluetooth & devices → Mouse, mirroring the existing ClickLock UX; or (2) as a new module in **PowerToys**, alongside the existing Mouse utilities. Native is the stronger fit for the accessibility argument and for symmetry with ClickLock; PowerToys is the faster path with distribution and signing already solved. A complete user-mode reference implementation already exists (~600 LOC, .NET 9, BCL-only) that demonstrates feasibility, validates the UX, and surfaces the operational concerns (move-cancel, crash-safe release, hook ordering) either path would need to address. If neither path lands, the project will continue to ship the existing signed tray utility as a self-release; that fallback is described in Appendix A.
 
 ---
 
@@ -43,9 +43,11 @@ None of these are appropriate for the broad user base who would benefit. The fea
 
 ---
 
-## 2. Proposal
+## 2. Proposal: two paths to ship in Microsoft
 
-### 2.1 What ships
+The ask is for Microsoft to absorb Right-Click Lock through one of two surfaces. The behavior specification (§2.3 to §2.5) is identical for both. The author's preference is the native path for the symmetry-with-ClickLock and accessibility reasons; PowerToys is presented as a credible alternative if native scoping is harder than the contributor cadence PowerToys allows.
+
+### 2.1 Path A: native in Mouse Properties and Settings
 
 Add a **Right-Click Lock** section to the Buttons tab in Mouse Properties, structurally identical to the existing ClickLock section:
 
@@ -55,7 +57,24 @@ Add a **Right-Click Lock** section to the Buttons tab in Mouse Properties, struc
 
 Mirror the same option in **Settings → Bluetooth & devices → Mouse**, alongside the existing primary-button options.
 
-### 2.2 Behavior specification
+This is the strongest fit for the user populations identified in §1.2. The accessibility audience that motivated ClickLock looks here; gamers and productivity users searching "mouse" find ClickLock today and would find Right-Click Lock right next to it. Native is also the only path that delivers the anti-cheat exemption discussed in §3.
+
+### 2.2 Path B: PowerToys module
+
+Submit Right-Click Lock to [microsoft/PowerToys](https://github.com/microsoft/PowerToys) as a new module under the existing **Mouse utilities** category (Find My Mouse, Mouse Highlighter, Mouse Pointer Crosshairs, Mouse Jump). The module would expose a settings card in the PowerToys Settings UI with the same controls as the reference implementation: master toggle, hold-duration slider, move-cancel toggle and threshold, plus a per-app exclusion list using the existing PowerToys excluded-apps pattern. An optional toggle hotkey would slot into PowerToys' centralized hotkey manager.
+
+Why this path is credible:
+
+- **Distribution and signing solved.** PowerToys ships as a single signed MSIX bundle through GitHub Releases, the Microsoft Store, and `winget`. No per-vendor SmartScreen warm-up.
+- **Established mouse-utility category.** Four existing modules establish that low-level pointer/button manipulation is in scope. Right-Click Lock is structurally smaller than any of them.
+- **Enterprise story for free.** PowerToys ships with a Group Policy template (`PowerToysGpoTemplate.admx`) for enabling/disabling individual modules; the new module inherits that mechanism.
+- **Documented contribution flow.** `CONTRIBUTING.md` and `doc/devdocs/` lay out the new-module submission process: feature-request issue, triage, design review, PR.
+
+Trade-offs vs. Path A: PowerToys does not reach users who don't install it (most of the accessibility population, much of the gaming population), it doesn't deliver an anti-cheat exemption, and it does not address the symmetry-with-ClickLock argument that motivates the proposal in the first place. The native path remains preferred for those reasons; PowerToys is the right call if the native release cadence is incompatible with the timeline Microsoft is willing to commit to.
+
+Implementation note: the reference implementation's Core layer (state machine, settings model) is pure C# with no UI dependency and would drop into a PowerToys module project unchanged. The Hooks and Native layers are functionally equivalent to what `FindMyMouse.cpp` already does. Estimated porting effort is one contributor week, plus PowerToys triage and review (typically 2 to 8 weeks for a new module of this size, based on observed cadence in the public PR history).
+
+### 2.3 Behavior specification
 
 Identical pattern to ClickLock, applied to the secondary button:
 
@@ -63,11 +82,11 @@ Identical pattern to ClickLock, applied to the secondary button:
 2. On physical RMB release, OS continues to assert RMB-down to the foreground window.
 3. Next physical RMB click releases the synthetic hold and returns to idle.
 
-### 2.3 Move-cancel safety overlay
+### 2.4 Move-cancel safety overlay
 
-The reference implementation surfaces a non-obvious safety requirement: if the user moves the mouse beyond a small dead-zone *before* the lock arms, treat the gesture as a real drag and do **not** lock. This prevents the lock from triggering on legitimate right-button drags or click-releases that happen to span the threshold window. Microsoft should incorporate this overlay in any native implementation; it is documented in the reference whitepaper §4.
+The reference implementation surfaces a non-obvious safety requirement: if the user moves the mouse beyond a small dead-zone *before* the lock arms, treat the gesture as a real drag and do **not** lock. This prevents the lock from triggering on legitimate right-button drags or click-releases that happen to span the threshold window. Microsoft should incorporate this overlay in any implementation; it is documented in the reference whitepaper §4.
 
-### 2.4 Crash / session safety
+### 2.5 Crash / session safety
 
 Because a locked secondary button can leave the OS believing RMB is held even after the locking process exits, any implementation needs:
 
@@ -75,23 +94,25 @@ Because a locked secondary button can leave the OS believing RMB is held even af
 - A guaranteed release on session lock / fast user switch / sleep.
 - A "panic release": pressing any keyboard key, or moving focus to a system overlay, releases the lock.
 
-A native implementation in the input stack avoids these concerns entirely (the OS simply stops asserting the synthetic state). The reference implementation handles them at user-mode and the engineering is not trivial.
+A native implementation in the input stack avoids these concerns entirely (the OS simply stops asserting the synthetic state). A PowerToys implementation operates at user-mode and inherits the same engineering burden the reference implementation already addresses. Either way, the requirements are non-trivial and pre-validated by the reference code.
 
 ---
 
-## 3. Why this belongs in Windows (vs leaving to ISVs)
+## 3. Why this belongs in Microsoft's surface area (vs leaving to ISVs)
 
-| Concern | Third-party | Native |
-|---|---|---|
-| Anti-cheat compatibility | Routinely false-flagged for synthetic input | Built-in, exempt |
-| Code signing / SmartScreen | Per-vendor cert, reputation cold-start | Already trusted |
-| Hook ordering / interaction with other utilities | Fragile, breaks when other tools install hooks | Implemented at the input source |
-| Crash-safe release | Requires careful per-app engineering | Implicit |
-| Per-app exclusion model | Each ISV reinvents | Inherits Focus Assist / app exclusion |
-| Discoverability | Search engines, word of mouth | Mouse Properties + Settings, where users already look |
-| Accessibility audit | Per-vendor, inconsistent | Inherits Microsoft accessibility process |
+| Concern | Third-party self-release | PowerToys module | Native (Mouse Properties / Settings) |
+|---|---|---|---|
+| Anti-cheat compatibility | Routinely false-flagged | Routinely false-flagged | Built-in, exempt |
+| Code signing / SmartScreen | Per-vendor cert, reputation cold-start | Trusted (PowerToys MSIX) | Already trusted |
+| Hook ordering / interaction with other utilities | Fragile | Same hook layer, slightly less fragile in practice | Implemented at the input source |
+| Crash-safe release | Requires careful per-app engineering | Same engineering, scoped to the module | Implicit |
+| Per-app exclusion model | Each ISV reinvents | Inherits PowerToys excluded-apps pattern | Inherits Focus Assist |
+| Enterprise GPO disable | Custom (would need authoring) | Inherited from PowerToys | Native admin templates |
+| Discoverability | Search engines, word of mouth | Users who install PowerToys | Mouse Properties + Settings, where users already look |
+| Accessibility audit | Per-vendor, inconsistent | Inherits PowerToys accessibility review | Inherits Microsoft accessibility process |
+| Reaches users who don't install PowerToys | Yes (anyone can download) | No | Yes (everyone with Windows) |
 
-The feature has the characteristics that historically motivate Microsoft to absorb third-party tooling into Windows: it is small, broadly useful, addresses an existing accessibility asymmetry, has a clean UX precedent (ClickLock), and is currently served by a fragmented landscape of unsigned utilities and AutoHotkey scripts that present support and security friction users should not need to navigate.
+The feature has the characteristics that historically motivate Microsoft to absorb third-party tooling into Windows: it is small, broadly useful, addresses an existing accessibility asymmetry, has a clean UX precedent (ClickLock), and is currently served by a fragmented landscape of unsigned utilities and AutoHotkey scripts that present support and security friction users should not need to navigate. Either of the two Microsoft-side paths in §2 substantially improves on the third-party-self-release status quo; the native path improves on it the most.
 
 ---
 
@@ -174,88 +195,22 @@ The author is happy to grant Microsoft a perpetual, royalty-free license to use 
 
 ## 9. Ask
 
-1. **Decision** on whether Right-Click Lock is in scope for a future Windows release.
-2. If yes: a directed conversation with the Mouse Properties / Settings owners to align on UX surface and the SPI registration.
-3. If no: explicit guidance on which fallback path the relevant teams would prefer the project pursue. The two options on the table, documented in Appendix A and Appendix B, are (a) a third-party Control Panel applet (preferred by the author) that surfaces alongside Mouse Properties, or (b) submission of the module to PowerToys. Either is workable; the author would value team input on which lands better with Microsoft's own roadmap.
+1. **Decision** on whether Right-Click Lock is in scope for either Microsoft-side path described in §2.
+2. **If native (Path A):** a directed conversation with the Mouse Properties / Settings owners to align on UX surface and the SPI registration.
+3. **If PowerToys (Path B):** a green light from the PowerToys leadership to open a feature-request issue and submit a draft PR adapting the reference implementation. The author is willing to do the porting work.
+4. **If neither:** the project will continue to ship as the existing signed tray utility (Appendix A). Even in that outcome, an explicit "no, please don't" or "yes, but not on our roadmap" is more useful than silence; it lets the project plan its own roadmap accordingly.
 
 The author can be reached via [LinkedIn](https://www.linkedin.com/in/owenpkent/) and is available for a call at Microsoft's convenience.
 
 ---
 
-## Appendix A. Third-party fallback: custom Control Panel applet (preferred)
+## Appendix A. Self-release fallback
 
-If the feature does not ship natively, the project's first-choice integration path maximizes discoverability for the same audience the native proposal targets, without depending on Microsoft cooperation:
+If neither Microsoft-side path in §2 lands, the project continues to ship the existing signed tray utility as a self-release. This is the current state today: a single-file, EV-signed `.exe` published on GitHub Releases, with a built-in tray UI exposing the same controls that any native or PowerToys version would.
 
-1. **Visual mimicry.** Restyle the settings form to match the Mouse Properties dialog (Segoe UI Variable, card sections, exact button placement). Adds a Start-menu shortcut so Win+S "mouse" surfaces the tool.
-2. **Custom Control Panel applet (`.cpl`).** A C++ shim DLL implementing `CPlApplet`, registered under `HKCU\Software\Microsoft\Windows\CurrentVersion\Control Panel\Cpls`, surfacing "Right-Click Lock" alongside "Mouse" in classic Control Panel and in Settings search.
-3. **Code signing.** Done as of v0.1.0: shipping binaries are signed with the OK Studio Inc. EV code-signing certificate to clear SmartScreen reputation as adoption grows and to reduce AV friction.
-4. **Single-instance named-pipe IPC** so the CPL can surface the running tray instance's settings form rather than launching a duplicate.
+The author has no plans to invest further in distribution surface (a custom Control Panel applet, an MSIX, a Microsoft Store listing) absent a Microsoft signal that the feature should land natively or as a PowerToys module. The user-mode self-release reaches the audience that knows to look for it; meaningfully reaching the populations identified in §1.2 (especially the accessibility slice) requires Microsoft to ship it. The reference implementation is offered as proof that the engineering is settled and the UX is right; what remains is the distribution decision, which only Microsoft can make.
 
-This is the preferred fallback because it lands the feature in the exact UI surface the proposal targets (Mouse Properties / Settings → Mouse), keeping the discoverability story coherent with the native ask: a user who searches "mouse" or opens Mouse Properties to look for ClickLock finds Right-Click Lock right next to it. The accessibility audience that motivates ClickLock looks in the same place. The trade-off is that the project carries the signing, distribution, and SmartScreen reputation cost that a native or PowerToys path would not.
-
-## Appendix B. Alternate fallback: PowerToys submission
-
-If the .cpl path proves friction-prone (signing reputation, Defender false positives, or installer rejection by enterprise admins) or if a faster ship cadence is preferable, the project's close-second path is **submission to [microsoft/PowerToys](https://github.com/microsoft/PowerToys) as a new module**. PowerToys is open source under MIT, has a public contribution process, and already hosts a "Mouse utilities" category (Find My Mouse, Mouse Highlighter, Mouse Pointer Crosshairs, Mouse Jump) that Right-Click Lock fits naturally beside.
-
-### B.1 Why PowerToys is a viable secondary path
-
-- **Distribution and signing solved.** PowerToys ships as a single signed MSIX bundle through GitHub Releases, the Microsoft Store, and `winget`. No per-vendor SmartScreen warm-up; users already trust the installer. This is the single largest operational benefit relative to the .cpl path.
-- **Established mouse-utility category.** The four existing mouse modules establish that low-level pointer/button manipulation is in scope. Right-Click Lock is structurally smaller than any of them.
-- **Audience overlap.** The PowerToys install base skews toward developers, power users, and gamers, which overlaps the gaming and productivity slices of the user populations identified in §1.2. The accessibility slice is less well-served here than by Mouse Properties, which is why this is the secondary path.
-- **Enterprise story.** PowerToys ships with a Group Policy template (`PowerToysGpoTemplate.admx`) for enabling/disabling individual modules. A new module inherits that mechanism for free, addressing the enterprise-admin disable concern raised by the .cpl path.
-- **Contribution process is documented.** `CONTRIBUTING.md` and `doc/devdocs/` in microsoft/PowerToys lay out the new-module submission flow: feature-request issue, triage, design review, PR.
-
-### B.2 Proposed module shape
-
-- **Name.** "Right-Click Lock" (descriptive) or "ClickLock+" (positioning vs. existing OS feature). The PowerToys team can decide.
-- **Category.** Under existing **Mouse utilities** in the Settings UI sidebar.
-- **Settings page** (PowerToys Settings is XAML / WinUI 3):
-  - Master toggle.
-  - Hold-duration slider, Short to Long, mirroring the reference implementation's 10-stop slider.
-  - Move-cancel toggle plus pixel-threshold input.
-  - Per-app exclusion list, using the existing PowerToys excluded-apps pattern (Find My Mouse and Mouse Highlighter both have this; the UI is already a designed component).
-- **No tray icon.** The module would surface state through the standard PowerToys tray icon and Settings page, consistent with sibling modules.
-- **Optional hotkey.** Toggle Right-Click Lock on/off via a user-configured hotkey, using PowerToys' existing centralized hotkey manager.
-
-### B.3 Implementation outline
-
-The reference implementation is in C#. PowerToys modules are typically C++ for the runtime hook, but several modules ship in C# (FancyZones for the editor, PowerRename, Awake, PowerLauncher) and the project supports a mixed model. The minimum-friction port:
-
-1. **Lift the Core layer verbatim.** `RightClickLockController`, `AppSettings`, and the state machine are pure logic with no UI dependency. They drop into a PowerToys module project unchanged.
-2. **Replace the Hooks and Native layers** with PowerToys' shared input infrastructure if it exists for the target module shape, or keep the existing `WH_MOUSE_LL` + `SendInput` wrappers (functionally equivalent to what FindMyMouse.cpp already does).
-3. **Replace the WinForms UI** with a settings card in the PowerToys Settings UI XAML project, plus the standard module enable/disable plumbing.
-4. **Reuse the existing whitepaper** as the design document attached to the feature-request issue. The state machine, the move-cancel rationale, the crash-safe release strategy, and the gesture-set test corpus are all directly applicable.
-
-Estimated effort: a single contributor week for the port, plus PowerToys triage and review cycle (typically 2 to 8 weeks for a new module of this size, based on observed cadence in the public PR history).
-
-### B.4 Submission path
-
-1. **Open a feature-request issue** in microsoft/PowerToys using the standard template, linking to this proposal, the whitepaper, and the reference implementation.
-2. **Solicit reactions and discussion** to gauge community demand and PowerToys team interest. Existing related issues (search "right click lock", "RMB lock", "click lock") provide signal.
-3. **On triage approval, submit a draft PR** with the ported module behind a feature flag.
-4. **Iterate through review** on coding conventions, settings-page UX, accessibility audit, and the per-app exclusion model.
-5. **Merge and ship** in a subsequent PowerToys release.
-
-### B.5 Trade-offs vs. the .cpl path and the native proposal
-
-| Concern | Native (preferred) | Custom .cpl (Appendix A) | PowerToys module (Appendix B) |
-| --- | --- | --- | --- |
-| Lives next to ClickLock in Mouse Properties | Yes | Yes (visible alongside) | No (separate Settings UI) |
-| Accessibility-user discoverability | Best | Good | Limited (PowerToys is opt-in install) |
-| Code signing / SmartScreen | Trusted | Per-vendor EV cert (done) | Trusted (PowerToys MSIX) |
-| Anti-cheat exemption | Yes | No | No |
-| Enterprise GPO disable | Native admin templates | Custom (would need authoring) | Inherited from PowerToys |
-| Per-app exclusion model | Inherits Focus Assist | Custom (would need authoring) | Inherited from PowerToys |
-| Time to ship | Windows release train | Contributor pace (this project) | PowerToys release train (4 to 8 weeks typical) |
-| Reaches users who don't install PowerToys | Yes | Yes | No |
-
-The PowerToys path is genuinely close to the .cpl path on engineering effort and distribution but loses on the symmetry argument: ClickLock is in Mouse Properties, and so should Right-Click Lock be. The PowerToys path is the right call if the .cpl path's signing or installer surface proves untenable, or if PowerToys leadership is interested in absorbing the feature directly.
-
-### B.6 Either-or, not both
-
-The two fallback paths are mutually exclusive in practice: shipping the same feature in two distribution channels splits the user base, doubles the maintenance burden, and complicates the eventual deprecation story if the native path lands later. Project maintainers will choose one based on initial submission outcomes (PowerToys triage decision, .cpl signing reputation arc) and consolidate.
-
-## Appendix C. State machine
+## Appendix B. State machine
 
 The reference implementation's right-click-lock state machine, lifted from `whitepaper.md` §4:
 
@@ -274,7 +229,7 @@ The reference implementation's right-click-lock state machine, lifted from `whit
 
 The implementation is approximately 80 lines of C# in `RightClickLockController.cs`. A native implementation would presumably collapse this into the existing ClickLock state machine, parameterized by which button is locked.
 
-## Appendix D. Contact
+## Appendix C. Contact
 
 - **Author:** Owen Kent
 - **LinkedIn:** [linkedin.com/in/owenpkent](https://www.linkedin.com/in/owenpkent/)

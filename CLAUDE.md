@@ -54,6 +54,8 @@ dotnet publish src/WindowsRightClickLock/WindowsRightClickLock.csproj `
   -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true
 ```
 
+Signed release build (single self-contained `.exe` for distribution): run `scripts\release.ps1` from a non-elevated PowerShell with the OK Studio Inc. eToken plugged in. `-Tag` adds a `vX.Y.Z` git tag and a GitHub Release with the signed binary attached. The release-notes payload is passed via `--notes-file` (PowerShell argument parsing eats `*foo*` patterns when notes are inline).
+
 ## Conventions
 
 - File-scoped namespaces.

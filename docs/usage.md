@@ -12,7 +12,19 @@ That's the whole feature. Everything else is configuration and operational hygie
 
 ## Installation
 
-### Option A. Build from source
+### Option A. Download the signed release (recommended)
+
+Grab the latest signed `.exe` from [Releases](https://github.com/owenpkent/windows-right-click-lock/releases/latest). It's a single self-contained binary (~108 MB) signed with the OK Studio Inc. EV code-signing certificate. No installer, no admin prompt, no .NET runtime install required: download, double-click, the tray icon appears.
+
+First launch extracts the bundled runtime to `%TEMP%\.net\` (one-time, takes a few seconds on a cold cache); subsequent launches are immediate.
+
+If SmartScreen shows "Windows protected your PC" before publisher reputation has warmed up for that specific binary, click *More info* then *Run anyway*. The release notes include a SHA-256 if you want to verify before running:
+
+```powershell
+Get-FileHash .\WindowsRightClickLock-0.1.0.exe -Algorithm SHA256
+```
+
+### Option B. Build from source
 
 You need the .NET 9 SDK on Windows. Install via winget:
 
@@ -30,7 +42,7 @@ dotnet build src\WindowsRightClickLock\WindowsRightClickLock.csproj -c Release
 
 The output is at `src\WindowsRightClickLock\bin\Release\net9.0-windows\WindowsRightClickLock.exe`.
 
-### Option B. Single-file publish
+### Option C. Single-file publish
 
 Produces a self-contained `.exe` you can copy anywhere:
 
@@ -41,7 +53,7 @@ dotnet publish src\WindowsRightClickLock\WindowsRightClickLock.csproj `
 
 Output lands in `src\WindowsRightClickLock\bin\Release\net9.0-windows\win-x64\publish\`.
 
-### Option C. Root-level shortcut (dev)
+### Option D. Root-level shortcut (dev)
 
 After building, run the helper script to drop a `.lnk` at the repo root that targets the latest Release build:
 
